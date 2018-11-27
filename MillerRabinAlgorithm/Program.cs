@@ -8,30 +8,42 @@ namespace MillerRabinAlgorithm
     {
         static void Main(string[] args)
         {
+            // create a mapping of non-prime numbers with "false-positive" prime tests
             Dictionary<int, double> primeProbablities = new Dictionary<int, double>();
 
-            // # of iterations that returned likely prime, divided by total # of iterations
             for(int n = 105001; n < 115000; n+=2)
             {
+                // these two values will be used to count the # of total iterations
+                // as well as the # of iterations that return prime
                 int primeCount = 0;
                 int totalCount = 0;
 
-                for(int x = 0; x < 4; x++)
+                // in order to achieve 3 digit precision we must test with 1000 x values
+                for(int x = 0; x < 1000; x++)
                 {
+                    // if the number is potentially prime, increase the prime counter
                     if (MillerRabin(n))
                         primeCount++;
+                    // increase the total counter regardless
                     totalCount++;
                 }
 
+                // # of iterations that returned likely prime, divided by total # of iterations
                 double errorProb = (double)primeCount / (double)totalCount;
 
+                // check using a slow but sure way if the value is actually prime
+                // if not, but some of our tests counted it as prime we know we
+                // have some false positives
                 if (!IsPrime(n))
                 {
-                    //Console.WriteLine(n);
+                    // this number is not prime so we will add it to our error
+                    // probability dictionary with its correct error percentage
                     primeProbablities.Add(n, errorProb);
                 }
             }
 
+            // sort our dictionary so that the values with the greatest error probability
+            // are at the top
             var orderedErrorProbs = primeProbablities.OrderByDescending(p => p.Value);
 
             // write top 10 ints and their error probabilities
@@ -41,6 +53,12 @@ namespace MillerRabinAlgorithm
             }
         }
 
+        /// <summary>
+        /// The actual Miller-Rabin Primality Testing Algorithm, will return false if
+        /// n is not a prime, and true if it is. 
+        /// </summary>
+        /// <param name="n">The number to perform the test on</param>
+        /// <returns>True if n is a potential prime, false if not</returns>
         static bool MillerRabin(int n)
         {
             // these if statements take care of edge cases in prime
@@ -55,9 +73,12 @@ namespace MillerRabinAlgorithm
             // a value to represent -1 mod n
             int negativeOne = n - 1;
 
+            // represents the # of 2's that n - 1 can be factored into
             int s = 0;
+            // represents the greatest prime factor of n-1
             int m = n - 1;
 
+            // factor n - 1 to get the powers we need to raise a to
             while (m % 2 == 0)
             {
                 s++;
@@ -65,48 +86,29 @@ namespace MillerRabinAlgorithm
             }
 
             // perform checks to see if the number is prime
-            //int x = (int)Math.Pow((double)a, (double)m) % n;
-
-            //// if either of these tests pass, declare n a probable prime
-            //if (x == 1 || x  == negativeOne)
-            //    return true;
-
-            //while(m != negativeOne)
-            //{
-            //    x = (x * x) % n;
-            //    m *= 2;
-
-            //    if (x == 1)
-            //        return false;
-            //    if (x == negativeOne)
-            //        return true;
-            //}
             Random r = new Random();
+            // calculate an a value, this should be a number that is between 0
+            // and n - 1
             int a = r.Next(n - 1) + 1;
-            //for (int i = 0; i < k; i++)
-            //{
 
-                int temp = m;
-                long mod = 1;
-                for (int j = 0; j < temp; ++j) mod = (mod * a) % n;
-                while (temp != n - 1 && mod != 1 && mod != n - 1)
-                {
-                    mod = (mod * mod) % n;
-                    temp *= 2;
-                }
+            // create a temporary variable so we're not permanantly modifying m
+            int temp = m;
+            long mod = 1;
+            for (int j = 0; j < temp; ++j)
+            {
+                mod = (mod * a) % n;
+            }
+            while (temp != n - 1 && mod != 1 && mod != n - 1)
+            {
+                mod = (mod * mod) % n;
+                temp *= 2;
+            }
 
-                if (mod != n - 1 && temp % 2 == 0) return false;
-            //}
+            // if both of these conditions are met then our value is not a prime
+            if (mod != n - 1 && temp % 2 == 0) return false;
+
+            // otherwise, we have a potential prime
             return true;
-
-            //if ((int)Math.Pow((double)a, (double)(m * 2)) % n == 1)
-            //    return false;
-
-            //if ((int)Math.Pow((double)a, (double)(m * 2)) % n == negativeOne)
-            //    return true;
-
-            // if no tests pass, declare n composite
-            //return false;
         }
 
         /// <summary>
